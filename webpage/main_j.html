@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="tf.min.js" defer></script>
     <script src="teachablemachine-pose.min.js" defer></script>
 </head>
+
 <body>
     <div>Teachable Machine Pose Model</div>
     <button type="button" onclick="init()">Start</button>
@@ -16,13 +18,65 @@
     <h1>Notification Example</h1>
     <button id="notifyButton">Show Notification</button>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('notifyButton').addEventListener('click', () => {
+                // Check if the browser supports notifications
+                if (!("Notification" in window)) {
+                    alert("This browser does not support desktop notification");
+                }
+                // Check if notification permissions have already been granted
+                else if (Notification.permission === "granted") {
+                    // If it's okay, let's create a notification
+                    showNotificationIntro();
+                }
+                // Otherwise, ask the user for permission
+                else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        // If the user accepts, let's create a notification
+                        if (permission === "granted") {
+                            showNotificationIntro();
+                        }
+                    });
+                }
+            });
+
+            function showNotification() {
+                const options = {
+                    body: "stop slouching",
+                    icon: "icon.png" // Path to an icon image
+                };
+
+                const notification = new Notification("Notification Title", options);
+                console.info
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+            function showNotificationIntro() {
+                const options = {
+                    body: "We can send you notifications now!",
+                    icon: "icon.png" // Path to an icon image
+                };
+
+                const notification = new Notification("Notification Title", options);
+
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+
+        });
+    </script>
+
     <script type="text/javascript">
         // More API functions here:
         // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
-        
+
         // the link to your model provided by Teachable Machine export panel
         const URL = "./my_model/";
         let model, webcam, ctx, labelContainer, maxPredictions;
+        let stoppedSlouching = true;
 
         async function init() {
             const modelURL = URL + "model.json";
@@ -67,9 +121,29 @@
                     prediction[i].className + ": " + prediction[i].probability.toFixed(2);
                 labelContainer.childNodes[i].innerHTML = classPrediction;
             }
-
+            checkSlouching(prediction)
             // finally draw the poses
             drawPose(pose);
+        }
+
+
+        function checkSlouching(pred) {
+            if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
+                stoppedSlouching = true;
+            }
+            if (pred[1].probability > 0.6 && (stoppedSlouching)) {
+                stoppedSlouching = false;
+                const options = {
+                    body: "stop slouching",
+                    icon: "icon.png" // Path to an icon image
+                };
+
+                const notification = new Notification("Notification Title", options);
+                console.info
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
         }
 
         function drawPose(pose) {
@@ -85,42 +159,6 @@
         }
     </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('notifyButton').addEventListener('click', () => {
-                // Check if the browser supports notifications
-                if (!("Notification" in window)) {
-                    alert("This browser does not support desktop notification");
-                } 
-                // Check if notification permissions have already been granted
-                else if (Notification.permission === "granted") {
-                    // If it's okay, let's create a notification
-                    showNotification();
-                } 
-                // Otherwise, ask the user for permission
-                else if (Notification.permission !== "denied") {
-                    Notification.requestPermission().then(permission => {
-                        // If the user accepts, let's create a notification
-                        if (permission === "granted") {
-                            showNotification();
-                        }
-                    });
-                }
-            });
-
-            function showNotification() {
-                const options = {
-                    body: "This is the body of the notification",
-                    icon: "icon.png" // Path to an icon image
-                };
-
-                const notification = new Notification("Notification Title", options);
-
-                notification.onclick = () => {
-                    console.log("Notification clicked!");
-                };
-            }
-        });
-    </script>
 </body>
+
 </html>
