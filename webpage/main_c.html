@@ -18,8 +18,8 @@
     <h1>Notification Example</h1>
     <button id="notifyButton">Show Notification</button>
 
-    <h2>Time without slouching: <span id="slouchTimer">0</span> seconds</h2>
-    <h2>High Score: <span id="highScore">0</span> seconds</h2>
+    <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
+    <h2>High Score: <span id="highScore">0</span></h2>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -82,18 +82,31 @@
             clearInterval(slouchTimerInterval);
             slouchTimerInterval = setInterval(() => {
                 const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
-                document.getElementById('slouchTimer').innerText = elapsedTime;
+                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                updateHighScore(elapsedTime);
             }, 1000);
         }
 
-        function resetSlouchTimer() {
-            const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
-            if (elapsedTime > highScore) {
-                highScore = elapsedTime;
-                document.getElementById('highScore').innerText = highScore;
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${seconds}s`;
             }
+        }
+
+        function updateHighScore(currentTime) {
+            if (currentTime > highScore) {
+                highScore = currentTime;
+                document.getElementById('highScore').innerText = formatTime(highScore);
+            }
+        }
+
+        function resetSlouchTimer() {
             clearInterval(slouchTimerInterval);
-            document.getElementById('slouchTimer').innerText = '0';
+            document.getElementById('slouchTimer').innerText = '0s';
         }
 
         async function init() {
