@@ -1,133 +1,138 @@
-<!DOCTYPE html>
-<html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Pose Model</title>
-    <script src="tf.min.js" defer></script>
-    <script src="teachablemachine-pose.min.js" defer></script>
+    <title>Hack Your Habits</title>
+    <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+    </script>
+    <script src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
-    <div>Teachable Machine Pose Model</div>
-    <button type="button" onclick="init()">Start</button>
-    <div><canvas id="canvas"></canvas></div>
-    <div id="label-container"></div>
+<div class="title">
+    <h1>Hack Your Habits</h1>
+</div>
 
-    <h1>Notification Example</h1>
-    <button id="notifyButton">Show Notification</button>
+<div>
+    <canvas id="canvas"></canvas>
+    <button type="button" onclick="toggle()" id="startstop">Start</button>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('notifyButton').addEventListener('click', () => {
-                // Check if the browser supports notifications
-                if (!("Notification" in window)) {
-                    alert("This browser does not support desktop notification");
-                }
-                // Check if notification permissions have already been granted
-                else if (Notification.permission === "granted") {
-                    // If it's okay, let's create a notification
-                    showNotificationIntro();
-                }
-                // Otherwise, ask the user for permission
-                else if (Notification.permission !== "denied") {
-                    Notification.requestPermission().then(permission => {
-                        // If the user accepts, let's create a notification
-                        if (permission === "granted") {
-                            showNotificationIntro();
-                        }
-                    });
-                }
-            });
+<h1>Notification Example</h1>
+<button id="notifyButton">Show Notification</button>
 
-            function showNotification() {
-                const options = {
-                    body: "stop slouching",
-                    icon: "icon.png" // Path to an icon image
-                };
-
-                const notification = new Notification("Notification Title", options);
-                console.info
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('notifyButton').addEventListener('click', () => {
+            // Check if the browser supports notifications
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
             }
-            function showNotificationIntro() {
-                const options = {
-                    body: "We can send you notifications now!",
-                    icon: "icon.png" // Path to an icon image
-                };
-
-                const notification = new Notification("Notification Title", options);
-
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
+            // Check if notification permissions have already been granted
+            else if (Notification.permission === "granted") {
+                // If it's okay, let's create a notification
+                showNotificationIntro();
             }
-
+            // Otherwise, ask the user for permission
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    // If the user accepts, let's create a notification
+                    if (permission === "granted") {
+                        showNotificationIntro();
+                    }
+                });
+            }
         });
-    </script>
 
-    <script type="text/javascript">
-        // More API functions here:
-        // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
+        function showNotification() {
+            const options = {
+                body: "stop slouching",
+                icon: "icon.png" // Path to an icon image
+            };
 
-        // the link to your model provided by Teachable Machine export panel
-        const URL = "./my_model/";
-        let model, webcam, ctx, labelContainer, maxPredictions;
-        let stoppedSlouching = true;
+            const notification = new Notification("Notification Title", options);
+            console.info
+            notification.onclick = () => {
+                stoppedSlouching = true;
+            };
+        }
+        function showNotificationIntro() {
+            const options = {
+                body: "We can send you notifications now!",
+                icon: "icon.png" // Path to an icon image
+            };
 
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
+            const notification = new Notification("Notification Title", options);
 
-            // load the model and metadata
-            model = await tmPose.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            // Convenience function to setup a webcam
-            const size = 200;
-            const flip = true; // whether to flip the webcam
-            webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
-            await webcam.setup(); // request access to the webcam
-            await webcam.play();
-            window.requestAnimationFrame(loop);
-
-            // append/get elements to the DOM
-            const canvas = document.getElementById("canvas");
-            canvas.width = size; canvas.height = size;
-            ctx = canvas.getContext("2d");
-            labelContainer = document.getElementById("label-container");
-            for (let i = 0; i < maxPredictions; i++) { // and class labels
-                labelContainer.appendChild(document.createElement("div"));
-            }
+            notification.onclick = () => {
+                stoppedSlouching = true;
+            };
         }
 
-        async function loop(timestamp) {
-            webcam.update(); // update the webcam frame
+    });
+</script>
+
+
+<div id="label-container"></div>
+<script src="tf.min.js"></script>
+<script src="teachablemachine-pose.min.js"></script>
+<script type="text/javascript">
+    const URL = "./my_model/";
+    let model, webcam, ctx, labelContainer, maxPredictions;
+    let running = false;
+    let stoppedSlouching = true;
+
+
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmPose.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const size = 250;
+        const flip = true; 
+        webcam = new tmPose.Webcam(size, size, flip); 
+        await webcam.setup(); 
+        await webcam.play();
+        const canvas = document.getElementById("canvas");
+        canvas.width = size; canvas.height = size;
+        ctx = canvas.getContext("2d");
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) {
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+
+    async function loop(timestamp) {
+        if (running) {
+            webcam.update(); 
             await predict();
             window.requestAnimationFrame(loop);
         }
+    }
 
-        async function predict() {
-            // Prediction #1: run input through posenet
-            const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-            // Prediction 2: run input through teachable machine classification model
-            const prediction = await model.predict(posenetOutput);
+    async function predict() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
 
-            for (let i = 0; i < maxPredictions; i++) {
-                const classPrediction =
-                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-                labelContainer.childNodes[i].innerHTML = classPrediction;
-            }
-            checkSlouching(prediction)
-            // finally draw the poses
-            drawPose(pose);
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
         }
+        checkSlouching(prediction)
 
-
-        function checkSlouching(pred) {
+        drawPose(pose);
+    }
+    function checkSlouching(pred) {
             if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
                 stoppedSlouching = true;
             }
@@ -146,19 +151,30 @@
             }
         }
 
-        function drawPose(pose) {
-            if (webcam.canvas) {
-                ctx.drawImage(webcam.canvas, 0, 0);
-                // draw the keypoints and skeleton
-                if (pose) {
-                    const minPartConfidence = 0.5;
-                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
-                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
-                }
+
+    function drawPose(pose) {
+        if (webcam.canvas) {
+            ctx.drawImage(webcam.canvas, 0, 0);
+            if (pose) {
+                const minPartConfidence = 0.5;
+                tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
             }
         }
-    </script>
+    }
 
-</body>
-
-</html>
+    async function toggle() {
+        const button = document.getElementById("startstop");
+        if (running) {
+            running = false;
+            button.textContent = "Start";
+            webcam.stop(); // Stop the webcam
+            labelContainer.innerHTML = ""; // Clear the labels
+        } else {
+            await init(); // Initialize the model and webcam
+            running = true;
+            button.textContent = "Stop";
+            window.requestAnimationFrame(loop); // Start the loop
+        }
+    }
+</script>
