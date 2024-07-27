@@ -4,7 +4,8 @@
     <title>Hack Your Habits</title>
     <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
     <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
     </script>
     <script src="script.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -15,209 +16,163 @@
     <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
-    <div class="title">
-        <h1>Hack Your Habits</h1>
-    </div>
+<div class="title">
+    <h1>Hack Your Habits</h1>
+</div>
 
-    <div>
-        <canvas id="canvas"></canvas>
-        <button type="button" onclick="toggle()" id="startstop">Start</button>
-    </div>
+<div>
+    <canvas id="canvas"></canvas>
+    <button type="button" onclick="toggle()" id="startstop">Start</button>
+</div>
 
-    <h1>Notification Example</h1>
-    <button id="notifyButton">Show Notification</button>
+<h1>Notification Example</h1>
+<button id="notifyButton">Show Notification</button>
 
-    <h1>Time without slouching: <span id="slouchTimer">0</span></h1>
-    <h1>High Score: <span id="highScore">0</span></h1>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('notifyButton').addEventListener('click', () => {
-                // Check if the browser supports notifications
-                if (!("Notification" in window)) {
-                    alert("This browser does not support desktop notification");
-                }
-                // Check if notification permissions have already been granted
-                else if (Notification.permission === "granted") {
-                    // If it's okay, let's create a notification
-                    showNotificationIntro();
-                }
-                // Otherwise, ask the user for permission
-                else if (Notification.permission !== "denied") {
-                    Notification.requestPermission().then(permission => {
-                        // If the user accepts, let's create a notification
-                        if (permission === "granted") {
-                            showNotificationIntro();
-                        }
-                    });
-                }
-            });
-
-            function showNotification() {
-                const options = {
-                    body: "Stop Slouching",
-                    icon: "icon.png" // Path to an icon image
-                };
-
-                const notification = new Notification("Hack Your Habits", options);
-                console.info
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('notifyButton').addEventListener('click', () => {
+            // Check if the browser supports notifications
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
             }
-            function showNotificationIntro() {
-                const options = {
-                    body: "We can send you notifications now!",
-                    icon: "icon.png" // Path to an icon image
-                };
-
-                const notification = new Notification("Hack Your Habits", options);
-
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
+            // Check if notification permissions have already been granted
+            else if (Notification.permission === "granted") {
+                // If it's okay, let's create a notification
+                showNotificationIntro();
             }
-
+            // Otherwise, ask the user for permission
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    // If the user accepts, let's create a notification
+                    if (permission === "granted") {
+                        showNotificationIntro();
+                    }
+                });
+            }
         });
-    </script>
 
+        function showNotification() {
+            const options = {
+                body: "stop slouching",
+                icon: "icon.png" // Path to an icon image
+            };
 
-    <div id="label-container"></div>
-    <script src="tf.min.js"></script>
-    <script src="teachablemachine-pose.min.js"></script>
-    <script type="text/javascript">
-        const URL = "./my_model/";
-        let model, webcam, ctx, labelContainer, maxPredictions;
-        let running = false;
-        let stoppedSlouching = true;
-        let slouchTimerInterval;
-        let slouchStartTime;
-        let highScore = 0;
-
-        // Timer function
-        function startSlouchTimer() {
-            slouchStartTime = Date.now();
-            clearInterval(slouchTimerInterval);
-            slouchTimerInterval = setInterval(() => {
-                const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
-                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
-                updateHighScore(elapsedTime);
-            }, 1000);
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            if (minutes > 0) {
-                return `${minutes}m ${remainingSeconds}s`;
-            } else {
-                return `${seconds}s`;
-            }
-        }
-
-        function updateHighScore(currentTime) {
-            if (currentTime > highScore) {
-                highScore = currentTime;
-                document.getElementById('highScore').innerText = formatTime(highScore);
-            }
-        }
-
-        function resetSlouchTimer() {
-            clearInterval(slouchTimerInterval);
-            document.getElementById('slouchTimer').innerText = '0s';
-        }
-
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-
-            model = await tmPose.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            const size = 250;
-            const flip = true;
-            webcam = new tmPose.Webcam(size, size, flip);
-            await webcam.setup();
-            await webcam.play();
-            const canvas = document.getElementById("canvas");
-            canvas.width = size; canvas.height = size;
-            ctx = canvas.getContext("2d");
-            labelContainer = document.getElementById("label-container");
-            for (let i = 0; i < maxPredictions; i++) {
-                labelContainer.appendChild(document.createElement("div"));
-            }
-
-            startSlouchTimer();
-        }
-
-        async function loop(timestamp) {
-            if (running) {
-                webcam.update();
-                await predict();
-                window.requestAnimationFrame(loop);
-            }
-        }
-
-        async function predict() {
-            const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-            const prediction = await model.predict(posenetOutput);
-
-            for (let i = 0; i < maxPredictions; i++) {
-                const classPrediction =
-                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-                labelContainer.childNodes[i].innerHTML = classPrediction;
-            }
-            checkSlouching(prediction)
-
-            drawPose(pose);
-        }
-        function checkSlouching(pred) {
-            if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
+            const notification = new Notification("Notification Title", options);
+            notification.onclick = () => {
                 stoppedSlouching = true;
-                startSlouchTimer();
-            }
-            if (pred[1].probability > 0.6 && (stoppedSlouching)) {
-                stoppedSlouching = false;
-                resetSlouchTimer();
-                const options = {
-                    body: "stop slouching",
-                    icon: "icon.png" 
-                };
-
-                const notification = new Notification("Notification Title", options);
-                console.info
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
-            }
+            };
         }
 
+        function showNotificationIntro() {
+            const options = {
+                body: "We can send you notifications now!",
+                icon: "icon.png" // Path to an icon image
+            };
 
-        function drawPose(pose) {
-            if (webcam.canvas) {
-                ctx.drawImage(webcam.canvas, 0, 0);
-                if (pose) {
-                    const minPartConfidence = 0.5;
-                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
-                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
-                }
-            }
+            const notification = new Notification("Notification Title", options);
+
+            notification.onclick = () => {
+                stoppedSlouching = true;
+            };
         }
 
-        async function toggle() {
-            const button = document.getElementById("startstop");
-            if (running) {
-                running = false;
-                button.textContent = "Start";
-                webcam.stop(); // Stop the webcam
-                labelContainer.innerHTML = ""; // Clear the labels
-            } else {
-                await init(); // Initialize the model and webcam
-                running = true;
-                button.textContent = "Stop";
-                window.requestAnimationFrame(loop); // Start the loop
+    });
+</script>
+
+<div id="label-container"></div>
+<script src="tf.min.js"></script>
+<script src="teachablemachine-pose.min.js"></script>
+<script type="text/javascript">
+    const URL = "./my_model/";
+    let model, webcam, ctx, labelContainer, maxPredictions;
+    let running = false;
+    let intervalId;
+    let stoppedSlouching = true;
+
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmPose.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const size = 250;
+        const flip = true; 
+        webcam = new tmPose.Webcam(size, size, flip); 
+        await webcam.setup(); 
+        await webcam.play();
+        const canvas = document.getElementById("canvas");
+        canvas.width = size; canvas.height = size;
+        ctx = canvas.getContext("2d");
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) {
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+
+    async function loop() {
+        if (running) {
+            webcam.update(); 
+            await predict();
+        }
+    }
+
+    async function predict() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
+
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+        checkSlouching(prediction);
+
+        drawPose(pose);
+    }
+
+    function checkSlouching(pred) {
+        if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
+            stoppedSlouching = true;
+        }
+        if (pred[1].probability > 0.6 && (stoppedSlouching)) {
+            stoppedSlouching = false;
+            const options = {
+                body: "stop slouching",
+                icon: "icon.png" // Path to an icon image
+            };
+
+            const notification = new Notification("Notification Title", options);
+            notification.onclick = () => {
+                stoppedSlouching = true;
+            };
+        }
+    }
+
+    function drawPose(pose) {
+        if (webcam.canvas) {
+            ctx.drawImage(webcam.canvas, 0, 0);
+            if (pose) {
+                const minPartConfidence = 0.5;
+                tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
             }
         }
-    </script>
-</body>
+    }
+
+    async function toggle() {
+        const button = document.getElementById("startstop");
+        if (running) {
+            running = false;
+            clearInterval(intervalId); // Stop the interval
+            button.textContent = "Start";
+            webcam.stop(); // Stop the webcam
+            labelContainer.innerHTML = ""; // Clear the labels
+        } else {
+            await init(); // Initialize the model and webcam
+            running = true;
+            button.textContent = "Stop";
+            intervalId = setInterval(loop, 24); // Start the interval loop
+        }
+    }
+</script>
