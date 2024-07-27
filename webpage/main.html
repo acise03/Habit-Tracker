@@ -1,26 +1,4 @@
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hack Your Habits</title>
-    <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
-    <link rel="stylesheet" href="style.css">
-    <script type="text/javascript"
-        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
-</script>
-    <!-- <script src="https://cdn.emailjs.com/dist/email.min.js"></script> -->
-    <script src="script.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
-        rel="stylesheet">
-    <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
-</head>
-
-<div class="title">
-    <h1>Hack Your Habits</h1>
-</div>
-
+<div>Teachable Machine Pose Model</div>
 <button type="button" onclick="init()">Start</button>
 <div><canvas id="canvas"></canvas></div>
 <div id="label-container"></div>
@@ -30,7 +8,6 @@
     // More API functions here:
     // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
 
-    
     // the link to your model provided by Teachable Machine export panel
     const URL = "./my_model/";
     let model, webcam, ctx, labelContainer, maxPredictions;
@@ -46,7 +23,7 @@
         maxPredictions = model.getTotalClasses();
 
         // Convenience function to setup a webcam
-        const size = 250;
+        const size = 200;
         const flip = true; // whether to flip the webcam
         webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
         await webcam.setup(); // request access to the webcam
