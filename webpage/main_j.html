@@ -152,7 +152,7 @@
         if (running) {
             webcam.update();
             await predict();
-            window.requestAnimationFrame(loop);
+            requestAnimationFrame(loop);
         }
     }
 
@@ -212,7 +212,7 @@
             await init(); // Initialize the model and webcam
             running = true;
             button.textContent = "Stop";
-            intervalId = setInterval(loop, 100); // Start the interval loop
+            intervalId = requestAnimationFrame(loop); // Start the interval loop
         }
     }
 </script>
