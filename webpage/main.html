@@ -77,14 +77,15 @@
             for (let i = 0; i < maxPredictionsSlouch; i++) {
                 labelContainerSlouch.appendChild(document.createElement("div"));
             }
-            window.requestAnimationFrame(loopSlouch);
+            //window.requestAnimationFrame(loopSlouch);
+            slouchInterval = setInterval(loopSlouch, 24);
         }
 
         async function loopSlouch() {
             if (runningSlouch) {
                 webcamSlouch.update();
                 await predictSlouch();
-                requestAnimationFrame(loopSlouch);
+                //requestAnimationFrame(loopSlouch);
             }
         }
 
@@ -143,14 +144,15 @@
             for (let i = 0; i < maxPredictionsDistracted; i++) {
                 labelContainerDistracted.appendChild(document.createElement("div"));
             }
-            window.requestAnimationFrame(loopDistracted);
+            distractedInterval = setInterval(loopDistracted, 24);
+            //window.requestAnimationFrame(loopDistracted);
         }
 
         async function loopDistracted() {
             if (runningDistracted) {
                 webcamDistracted.update();
                 await predictDistracted();
-                window.requestAnimationFrame(loopDistracted);
+                //window.requestAnimationFrame(loopDistracted);
             }
         }
 
@@ -282,27 +284,39 @@
         });
 
         function toggleSlouch() {
+            runningSlouch = !runningSlouch;
+            localStorage.setItem('runningSlouch', runningSlouch);
+            document.getElementById('startstop-slouch').innerText = runningSlouch ? "Stop" : "Start";
             if (runningSlouch) {
-                runningSlouch = false;
-                document.getElementById('startstop-slouch').innerText = "Start";
-                stoppedSlouching = false;
-            } else {
-                runningSlouch = true;
-                document.getElementById('startstop-slouch').innerText = "Stop";
                 initSlouch();
+                //runningSlouch = false;
+                //document.getElementById('startstop-slouch').innerText = "Start";
+                //stoppedSlouching = false;
+            } else {
+                clearInterval(slouchInterval);
+                stoppedSlouching = false;
+                //runningSlouch = true;
+                //document.getElementById('startstop-slouch').innerText = "Stop";
+                //initSlouch();
             }
 
         }
 
         function toggleDistracted() {
+            runningDistracted = !runningDistracted;
+            localStorage.setItem('runningDistracted', runningDistracted);
+            document.querySelector('#startstop-distracted').innerText = runningDistracted ? "Stop" : "Start";
             if (runningDistracted) {
-                runningDistracted = false;
-                document.querySelector('#startstop-distracted').innerText = "Start";
-                focused = false;
-            } else {
-                runningDistracted = true;
-                document.querySelector('#startstop-distracted').innerText = "Stop";
                 initDistracted();
+                // runningDistracted = false;
+                // document.querySelector('#startstop-distracted').innerText = "Start";
+                // focused = false;
+            } else {
+                clearInterval(distractedInterval);
+                focused = "false";
+                // runningDistracted = true;
+                // document.querySelector('#startstop-distracted').innerText = "Stop";
+                // initDistracted();
             }
         }
     </script>
