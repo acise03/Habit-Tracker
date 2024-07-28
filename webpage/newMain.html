@@ -174,11 +174,11 @@
         }
 
         function checkFocus(pred) {
-            if (pred[1].probability > 0.6 && !focused) {
+            if (pred[0].probability > 0.6 && !focused) {
                 focused = true;
                 startCombinedTimer();
             }
-            if (pred[0].probability > 0.6 && focused) {
+            if (pred[1].probability > 0.6 && focused) {
                 focused = false;
                 resetCombinedTimer();
                 notifyUser("Stay Focused");
