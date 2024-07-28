@@ -46,6 +46,7 @@
             <div id="label-container-distracted"></div>
             <button type="button" onclick="toggleDistracted()" id="startstop-distracted">Start</button>
         </div>
+        <button id="notifyButton">Enable Notifications</button>
     </div>
     <script>
         const URL_SLOUCH = "./slouching_model/";
@@ -243,6 +244,43 @@
                 }
             };
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('notifyButton').addEventListener('click', () => {
+            // Check if the browser supports notifications
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            }
+            // Check if notification permissions have already been granted
+            else if (Notification.permission === "granted") {
+                // If it's okay, let's create a notification
+                showNotificationIntro();
+            }
+            // Otherwise, ask the user for permission
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    // If the user accepts, let's create a notification
+                    if (permission === "granted") {
+                        showNotificationIntro();
+                    }
+                });
+            }
+        });
+
+        function showNotificationIntro() {
+            const options = {
+                body: "We can send you notifications now!",
+                icon: "icon.png" // Path to an icon image
+            };
+
+            const notification = new Notification("Notification Title", options);
+
+            notification.onclick = () => {
+                stoppedSlouching = true;
+            };
+        }
+
+    });
 
         function toggleSlouch() {
             if (runningSlouch) {
