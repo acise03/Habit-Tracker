@@ -166,7 +166,6 @@
             for (let i = 0; i < maxPredictions; i++) {
                 const classPrediction =
                     prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-                labelContainer.childNodes[i].innerHTML = classPrediction;
             }
             checkSlouching(prediction)
 
@@ -181,11 +180,11 @@
                 stoppedSlouching = false;
                 resetSlouchTimer();
                 const options = {
-                    body: "stop slouching",
-                    icon: "icon.png" 
+                    body: "Stop Slouching",
+                    icon: "icon.png"
                 };
 
-                const notification = new Notification("Notification Title", options);
+                const notification = new Notification("Hack Your Habits", options);
                 console.info
                 notification.onclick = () => {
                     stoppedSlouching = true;
