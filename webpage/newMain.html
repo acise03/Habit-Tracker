@@ -109,7 +109,7 @@
             if (pred[1].probability > 0.6 && stoppedSlouching) {
                 stoppedSlouching = false;
                 resetCombinedTimer();
-                notifyUser("Stop Slouching");
+                notifyUser("Stop Slouching","icon2.png");
             }
         }
 
@@ -175,7 +175,7 @@
             if (pred[1].probability > 0.6 && focused) {
                 focused = false;
                 resetCombinedTimer();
-                notifyUser("Stay Focused");
+                notifyUser("Stay Focused","icon3.png");
             }
         }
 
@@ -234,10 +234,10 @@
             }
         }
 
-        function notifyUser(message) {
+        function notifyUser(message, icon) {
             const options = {
                 body: message,
-                icon: "icon.png"
+                icon: icon
             };
             const notification = new Notification("Hack Your Habits", options);
             notification.onclick = () => {
@@ -274,7 +274,6 @@
         function showNotificationIntro() {
             const options = {
                 body: "We can send you notifications now!",
-                icon: "icon.png" // Path to an icon image
             };
 
             const notification = new Notification("Hack your Habits", options);
