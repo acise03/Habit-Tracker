@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,47 +12,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
     <script src="tf.min.js"></script>
     <script src="teachablemachine-pose.min.js"></script>
 </head>
+
 <body>
-    <div class="title">
-        <h1>Hack Your Habits</h1>
+    <div class="banner">
+        <h3>Note: Scores only count with slouch AND distracted detection on.</h3>
+        <div class="title">
+            <h1>Hack Your Habits</h1>
+        </div>
     </div>
 
-    <div style="display: flex; justify-content: space-between;">
-        <div>
+    <div class="detection-container">
+        <div class="detection-box">
             <h2>Slouch Detection</h2>
-            <canvas id="canvas-slouch" style="border: 1px solid black;"></canvas>
-            <button type="button" onclick="toggleSlouch()" id="startstop-slouch">Start</button>
-            <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
-            <h2>High Score: <span id="highScore">0</span></h2>
+            <canvas id="canvas-slouch"></canvas>
             <div id="label-container-slouch"></div>
+            <button type="button" onclick="toggleSlouch()" id="startstop-slouch">Start</button>
         </div>
-        <div>
+
+        <div class="score-box">
+            <h2>CURRENT SCORE: <span id="currentScore">0</span>s</h2>
+            <h2>HIGH SCORE: <span id="highScore">0</span>s</h2>
+        </div>
+
+        <div class="detection-box">
             <h2>Distracted Detection</h2>
-            <canvas id="canvas-distracted" style="border: 1px solid black;"></canvas>
-            <button type="button" onclick="toggleDistracted()" id="startstop-distracted">Start</button>
+            <canvas id="canvas-distracted"></canvas>
             <div id="label-container-distracted"></div>
+            <button type="button" onclick="toggleDistracted()" id="startstop-distracted">Start</button>
         </div>
     </div>
-
     <script>
-        // Slouch Detection Script
         const URL_SLOUCH = "./slouching_model/";
         let modelSlouch, webcamSlouch, ctxSlouch, labelContainerSlouch, maxPredictionsSlouch;
         let runningSlouch = false;
         let stoppedSlouching = true;
 
-        // Distracted Detection Script
         const URL_DISTRACTED = "./distracted_model/";
         let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
         let runningDistracted = false;
-        let focused = false;
+        let focused = true;
 
-        // Timer and High Score Variables
+
         let combinedTimerInterval;
         let combinedStartTime;
         let highScore = 0;
@@ -69,7 +76,8 @@
             await webcamSlouch.setup();
             await webcamSlouch.play();
             const canvas = document.getElementById("canvas-slouch");
-            canvas.width = size; canvas.height = size;
+            canvas.width = size;
+            canvas.height = size;
             ctxSlouch = canvas.getContext("2d");
             labelContainerSlouch = document.getElementById("label-container-slouch");
             for (let i = 0; i < maxPredictionsSlouch; i++) {
@@ -134,7 +142,8 @@
             await webcamDistracted.setup();
             await webcamDistracted.play();
             const canvas = document.getElementById("canvas-distracted");
-            canvas.width = size; canvas.height = size;
+            canvas.width = size;
+            canvas.height = size;
             ctxDistracted = canvas.getContext("2d");
             labelContainerDistracted = document.getElementById("label-container-distracted");
             for (let i = 0; i < maxPredictionsDistracted; i++) {
@@ -164,11 +173,11 @@
         }
 
         function checkFocus(pred) {
-            if (pred[0].probability > 0.6 && focused == false) {
+            if (pred[1].probability > 0.6 && !focused) {
                 focused = true;
                 startCombinedTimer();
             }
-            if (pred[1].probability > 0.6 && focused == true) {
+            if (pred[0].probability > 0.6 && focused) {
                 focused = false;
                 resetCombinedTimer();
                 notifyUser("Stay Focused");
@@ -192,7 +201,7 @@
                 clearInterval(combinedTimerInterval);
                 combinedTimerInterval = setInterval(() => {
                     const elapsedTime = Math.floor((Date.now() - combinedStartTime) / 1000);
-                    document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                    document.getElementById('currentScore').innerText = formatTime(elapsedTime);
                     updateHighScore(elapsedTime);
                 }, 1000);
             }
@@ -200,7 +209,7 @@
 
         function resetCombinedTimer() {
             clearInterval(combinedTimerInterval);
-            document.getElementById('slouchTimer').innerText = '0s';
+            document.getElementById('currentScore').innerText = '0s';
         }
 
         function formatTime(seconds) {
@@ -239,6 +248,7 @@
             if (runningSlouch) {
                 runningSlouch = false;
                 document.getElementById('startstop-slouch').innerText = "Start";
+                stoppedSlouching = false;
             } else {
                 runningSlouch = true;
                 document.getElementById('startstop-slouch').innerText = "Stop";
@@ -251,6 +261,7 @@
             if (runningDistracted) {
                 runningDistracted = false;
                 document.querySelector('#startstop-distracted').innerText = "Start";
+                focused = false;
             } else {
                 runningDistracted = true;
                 document.querySelector('#startstop-distracted').innerText = "Stop";
@@ -259,4 +270,5 @@
         }
     </script>
 </body>
+
 </html>
