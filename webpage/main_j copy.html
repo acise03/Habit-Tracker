@@ -19,7 +19,6 @@
 
 <body>
     <div class="container">
-        <button id="notifyButton">Press to grant permission to notifications</button>
         <div class="title">
             <h1>Hack Your Habits</h1>
         </div>
@@ -30,6 +29,8 @@
         <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
         <h2>High Score: <span id="highScore">0</span></h2>
         <div id="label-container"></div>
+        <!-- <h1>Notification Example</h1> -->
+        <button id="notifyButton">Enable Notifications</button>
     </div>
 
     <script>
@@ -126,13 +127,14 @@
             model = await tmPose.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            const size = 250;
+            const width = 250;
+            const height = 230;
             const flip = true;
-            webcam = new tmPose.Webcam(size, size, flip);
+            webcam = new tmPose.Webcam(width, height, flip);
             await webcam.setup();
             await webcam.play();
             const canvas = document.getElementById("canvas");
-            canvas.width = size; canvas.height = size;
+            canvas.width = width; canvas.height = height;
             ctx = canvas.getContext("2d");
             labelContainer = document.getElementById("label-container");
             for (let i = 0; i < maxPredictions; i++) {
