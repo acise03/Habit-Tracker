@@ -161,6 +161,8 @@
                 button.textContent = "Start";
                 webcamSlouch.stop(); // Stop the webcam
                 labelContainerSlouch.innerHTML = ""; // Clear the labels
+                stoppedSlouching = false;
+                resetSlouchTimer();
             } else {
                 await initSlouch(); // Initialize the model and webcam
                 runningSlouch = true;
