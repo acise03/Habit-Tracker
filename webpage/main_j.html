@@ -4,8 +4,7 @@
     <title>Hack Your Habits</title>
     <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
     <link rel="stylesheet" href="style.css">
-    <script type="text/javascript"
-        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
     </script>
     <script src="script.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -27,6 +26,9 @@
 
 <h1>Notification Example</h1>
 <button id="notifyButton">Show Notification</button>
+
+<h2>Time without slouching: <span id="slouchTimer">0</span></h2>
+<h2>High Score: <span id="highScore">0</span></h2>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -53,11 +55,11 @@
 
         function showNotification() {
             const options = {
-                body: "stop slouching",
+                body: "Stop slouching",
                 icon: "icon.png" // Path to an icon image
             };
 
-            const notification = new Notification("Notification Title", options);
+            const notification = new Notification("Hack Your Habits", options);
             notification.onclick = () => {
                 stoppedSlouching = true;
             };
@@ -69,7 +71,7 @@
                 icon: "icon.png" // Path to an icon image
             };
 
-            const notification = new Notification("Notification Title", options);
+            const notification = new Notification("Hack Your Habits", options);
 
             notification.onclick = () => {
                 stoppedSlouching = true;
@@ -88,6 +90,41 @@
     let running = false;
     let intervalId;
     let stoppedSlouching = true;
+    let slouchTimerInterval;
+    let slouchStartTime;
+    let highScore = 0;
+
+    function startSlouchTimer() {
+        slouchStartTime = Date.now();
+        clearInterval(slouchTimerInterval);
+        slouchTimerInterval = setInterval(() => {
+            const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
+            document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+            updateHighScore(elapsedTime);
+        }, 1000);
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (minutes > 0) {
+            return `${minutes}m ${remainingSeconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+
+    function updateHighScore(currentTime) {
+        if (currentTime > highScore) {
+            highScore = currentTime;
+            document.getElementById('highScore').innerText = formatTime(highScore);
+        }
+    }
+
+    function resetSlouchTimer() {
+        clearInterval(slouchTimerInterval);
+        document.getElementById('slouchTimer').innerText = '0s';
+    }
 
     async function init() {
         const modelURL = URL + "model.json";
@@ -97,9 +134,9 @@
         maxPredictions = model.getTotalClasses();
 
         const size = 250;
-        const flip = true; 
-        webcam = new tmPose.Webcam(size, size, flip); 
-        await webcam.setup(); 
+        const flip = true;
+        webcam = new tmPose.Webcam(size, size, flip);
+        await webcam.setup();
         await webcam.play();
         const canvas = document.getElementById("canvas");
         canvas.width = size; canvas.height = size;
@@ -108,12 +145,14 @@
         for (let i = 0; i < maxPredictions; i++) {
             labelContainer.appendChild(document.createElement("div"));
         }
+        startSlouchTimer();
     }
 
     async function loop() {
         if (running) {
-            webcam.update(); 
+            webcam.update();
             await predict();
+            window.requestAnimationFrame(loop);
         }
     }
 
@@ -124,7 +163,6 @@
         for (let i = 0; i < maxPredictions; i++) {
             const classPrediction =
                 prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
         }
         checkSlouching(prediction);
 
@@ -134,15 +172,17 @@
     function checkSlouching(pred) {
         if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
             stoppedSlouching = true;
+            startSlouchTimer();
         }
         if (pred[1].probability > 0.6 && (stoppedSlouching)) {
             stoppedSlouching = false;
+            resetSlouchTimer();
             const options = {
-                body: "stop slouching",
+                body: "Stop Slouching",
                 icon: "icon.png" // Path to an icon image
             };
 
-            const notification = new Notification("Notification Title", options);
+            const notification = new Notification("Hack Your Habits", options);
             notification.onclick = () => {
                 stoppedSlouching = true;
             };
@@ -172,7 +212,7 @@
             await init(); // Initialize the model and webcam
             running = true;
             button.textContent = "Stop";
-            intervalId = setInterval(loop, 24); // Start the interval loop
+            intervalId = setInterval(loop, 100); // Start the interval loop
         }
     }
 </script>
