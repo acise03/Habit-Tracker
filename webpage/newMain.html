@@ -36,8 +36,8 @@
         </div>
 
         <div class="score-box">
-            <h2>CURRENT SCORE: <span id="currentScore">0</span>s</h2>
-            <h2>HIGH SCORE: <span id="highScore">0</span>s</h2>
+            <h2>CURRENT SCORE: <span id="currentScore">0</span> seconds</h2>
+            <h2>HIGH SCORE: <span id="highScore">0</span> seconds</h2>
         </div>
 
         <div class="detection-box">
@@ -196,7 +196,7 @@
         }
 
         function startCombinedTimer() {
-            if (stoppedSlouching && focused) {
+            if (stoppedSlouching && focused && runningSlouch && runningDistracted) {
                 combinedStartTime = Date.now();
                 clearInterval(combinedTimerInterval);
                 combinedTimerInterval = setInterval(() => {
@@ -209,7 +209,7 @@
 
         function resetCombinedTimer() {
             clearInterval(combinedTimerInterval);
-            document.getElementById('currentScore').innerText = '0s';
+            document.getElementById('currentScore').innerText = '0';
         }
 
         function formatTime(seconds) {
