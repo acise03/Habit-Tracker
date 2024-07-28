@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack Your Habits</title>
+    <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="title">
+            <h1>Hack Your Habits</h1>
+        </div>
+        <div>
+            <canvas id="canvas"></canvas>
+            <button type="button" onclick="toggle()" id="startstop">Start</button>
+        </div>
+        <h1>Notification Example</h1>
+        <button id="notifyButton">Show Notification</button>
+        <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
+        <h2>High Score: <span id="highScore">0</span></h2>
+        <div id="label-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('notifyButton').addEventListener('click', () => {
+                if (!("Notification" in window)) {
+                    alert("This browser does not support desktop notification");
+                } else if (Notification.permission === "granted") {
+                    showNotificationIntro();
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            showNotificationIntro();
+                        }
+                    });
+                }
+            });
+
+            function showNotification() {
+                const options = {
+                    body: "Stop slouching",
+                    icon: "icon.png"
+                };
+
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+
+            function showNotificationIntro() {
+                const options = {
+                    body: "We can send you notifications now!",
+                    icon: "icon.png"
+                };
+
+                const notification = new Notification("Hack Your Habits", options);
+
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+        });
+    </script>
+
+    <script src="tf.min.js"></script>
+    <script src="teachablemachine-pose.min.js"></script>
+    <script type="text/javascript">
+        const URL = "./my_model/";
+        let model, webcam, ctx, labelContainer, maxPredictions;
+        let running = false;
+        let intervalId;
+        let stoppedSlouching = true;
+        let slouchTimerInterval;
+        let slouchStartTime;
+        let highScore = 0;
+
+        function startSlouchTimer() {
+            slouchStartTime = Date.now();
+            clearInterval(slouchTimerInterval);
+            slouchTimerInterval = setInterval(() => {
+                const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
+                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                updateHighScore(elapsedTime);
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        function updateHighScore(currentTime) {
+            if (currentTime > highScore) {
+                highScore = currentTime;
+                document.getElementById('highScore').innerText = formatTime(highScore);
+            }
+        }
+
+        function resetSlouchTimer() {
+            clearInterval(slouchTimerInterval);
+            document.getElementById('slouchTimer').innerText = '0s';
+        }
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmPose.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            const size = 250;
+            const flip = true;
+            webcam = new tmPose.Webcam(size, size, flip);
+            await webcam.setup();
+            await webcam.play();
+            const canvas = document.getElementById("canvas");
+            canvas.width = size; canvas.height = size;
+            ctx = canvas.getContext("2d");
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+            startSlouchTimer();
+        }
+
+        async function loop() {
+            if (running) {
+                webcam.update();
+                await predict();
+                requestAnimationFrame(loop);
+            }
+        }
+
+        async function predict() {
+            const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+            const prediction = await model.predict(posenetOutput);
+
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            }
+            checkSlouching(prediction);
+
+            drawPose(pose);
+        }
+
+        function checkSlouching(pred) {
+            if (pred[0].probability > 0.6 && (stoppedSlouching == false)) {
+                stoppedSlouching = true;
+                startSlouchTimer();
+            }
+            if (pred[1].probability > 0.6 && (stoppedSlouching)) {
+                stoppedSlouching = false;
+                resetSlouchTimer();
+                const options = {
+                    body: "Stop Slouching",
+                    icon: "icon.png"
+                };
+
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+        }
+
+        function drawPose(pose) {
+            if (webcam.canvas) {
+                ctx.drawImage(webcam.canvas, 0, 0);
+                if (pose) {
+                    const minPartConfidence = 0.5;
+                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+                }
+            }
+        }
+
+        async function toggle() {
+            const button = document.getElementById("startstop");
+            if (running) {
+                running = false;
+                clearInterval(intervalId);
+                button.textContent = "Start";
+                webcam.stop();
+                labelContainer.innerHTML = "";
+            } else {
+                await init();
+                running = true;
+                button.textContent = "Stop";
+                intervalId = requestAnimationFrame(loop);
+            }
+        }
+    </script>
+</body>
+
+</html>
