@@ -47,6 +47,7 @@
         let slouchTimerInterval;
         let slouchStartTime;
         let highScore = 0;
+        let stoppedDistracted = true;
 
         async function initSlouch() {
             const modelURL = URL_SLOUCH + "model.json";
@@ -208,7 +209,27 @@
                 const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
                 labelContainerDistracted.childNodes[i].innerHTML = classPrediction;
             }
+            checkDistracted(prediction);
             drawPoseDistracted(pose);
+        }
+
+        function checkDistracted(pred) {
+            if (pred[0].probability > 0.6 && stoppedDistracted == false) {
+                stoppedDistracted = true;
+                // start timer
+            }
+            if (pred[1].probability > 0.6 && stoppedDistracted) {
+                stoppedDistracted = false;
+                // stop timer
+                const options = {
+                    body: "Focus!",
+                    icon: "icon.png"
+                };
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedDistracted = true;
+                };
+            }
         }
 
         function drawPoseDistracted(pose) {
