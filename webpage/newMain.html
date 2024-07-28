@@ -44,10 +44,17 @@
         let modelSlouch, webcamSlouch, ctxSlouch, labelContainerSlouch, maxPredictionsSlouch;
         let runningSlouch = false;
         let stoppedSlouching = true;
-        let slouchTimerInterval;
-        let slouchStartTime;
+
+        // Distracted Detection Script
+        const URL_DISTRACTED = "./distracted_model/";
+        let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
+        let runningDistracted = false;
+        let focused = false;
+
+        // Timer and High Score Variables
+        let combinedTimerInterval;
+        let combinedStartTime;
         let highScore = 0;
-        let stoppedDistracted = true;
 
         async function initSlouch() {
             const modelURL = URL_SLOUCH + "model.json";
@@ -68,7 +75,7 @@
             for (let i = 0; i < maxPredictionsSlouch; i++) {
                 labelContainerSlouch.appendChild(document.createElement("div"));
             }
-            startSlouchTimer();
+            window.requestAnimationFrame(loopSlouch);
         }
 
         async function loopSlouch() {
@@ -92,21 +99,14 @@
         }
 
         function checkSlouching(pred) {
-            if (pred[0].probability > 0.6 && stoppedSlouching == false) {
+            if (pred[0].probability > 0.6 && !stoppedSlouching) {
                 stoppedSlouching = true;
-                startSlouchTimer();
+                startCombinedTimer();
             }
             if (pred[1].probability > 0.6 && stoppedSlouching) {
                 stoppedSlouching = false;
-                resetSlouchTimer();
-                const options = {
-                    body: "Stop Slouching",
-                    icon: "icon.png"
-                };
-                const notification = new Notification("Hack Your Habits", options);
-                notification.onclick = () => {
-                    stoppedSlouching = true;
-                };
+                resetCombinedTimer();
+                notifyUser("Stop Slouching");
             }
         }
 
@@ -120,60 +120,6 @@
                 }
             }
         }
-
-        function startSlouchTimer() {
-            slouchStartTime = Date.now();
-            clearInterval(slouchTimerInterval);
-            slouchTimerInterval = setInterval(() => {
-                const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
-                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
-                updateHighScore(elapsedTime);
-            }, 1000);
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            if (minutes > 0) {
-                return `${minutes}m ${remainingSeconds}s`;
-            } else {
-                return `${seconds}s`;
-            }
-        }
-
-        function updateHighScore(currentTime) {
-            if (currentTime > highScore) {
-                highScore = currentTime;
-                document.getElementById('highScore').innerText = formatTime(highScore);
-            }
-        }
-
-        function resetSlouchTimer() {
-            clearInterval(slouchTimerInterval);
-            document.getElementById('slouchTimer').innerText = '0s';
-        }
-
-        async function toggleSlouch() {
-            const button = document.getElementById("startstop-slouch");
-            if (runningSlouch) {
-                runningSlouch = false;
-                clearInterval(intervalId); // Stop the interval
-                button.textContent = "Start";
-                webcamSlouch.stop(); // Stop the webcam
-                labelContainerSlouch.innerHTML = ""; // Clear the labels
-                stoppedSlouching = false;
-                resetSlouchTimer();
-            } else {
-                await initSlouch(); // Initialize the model and webcam
-                runningSlouch = true;
-                button.textContent = "Stop";
-                intervalId = requestAnimationFrame(loopSlouch); // Start the interval loop
-            }
-        }
-
-        // Distracted Detection Script
-        const URL_DISTRACTED = "./distracted_model/";
-        let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
 
         async function initDistracted() {
             const modelURL = URL_DISTRACTED + "model.json";
@@ -198,9 +144,11 @@
         }
 
         async function loopDistracted() {
-            webcamDistracted.update();
-            await predictDistracted();
-            window.requestAnimationFrame(loopDistracted);
+            if (runningDistracted) {
+                webcamDistracted.update();
+                await predictDistracted();
+                window.requestAnimationFrame(loopDistracted);
+            }
         }
 
         async function predictDistracted() {
@@ -211,26 +159,19 @@
                 const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
                 labelContainerDistracted.childNodes[i].innerHTML = classPrediction;
             }
-            checkDistracted(prediction);
+            checkFocus(prediction);
             drawPoseDistracted(pose);
         }
 
-        function checkDistracted(pred) {
-            if (pred[0].probability > 0.6 && stoppedDistracted == false) {
-                stoppedDistracted = true;
-                // start timer
+        function checkFocus(pred) {
+            if (pred[0].probability > 0.6 && !focused) {
+                focused = true;
+                startCombinedTimer();
             }
-            if (pred[1].probability > 0.6 && stoppedDistracted) {
-                stoppedDistracted = false;
-                // stop timer
-                const options = {
-                    body: "Focus!",
-                    icon: "icon.png"
-                };
-                const notification = new Notification("Hack Your Habits", options);
-                notification.onclick = () => {
-                    stoppedDistracted = true;
-                };
+            if (pred[1].probability > 0.6 && focused) {
+                focused = false;
+                resetCombinedTimer();
+                notifyUser("Stay Focused");
             }
         }
 
@@ -242,6 +183,72 @@
                     tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctxDistracted);
                     tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctxDistracted);
                 }
+            }
+        }
+
+        function startCombinedTimer() {
+            if (stoppedSlouching && focused) {
+                combinedStartTime = Date.now();
+                clearInterval(combinedTimerInterval);
+                combinedTimerInterval = setInterval(() => {
+                    const elapsedTime = Math.floor((Date.now() - combinedStartTime) / 1000);
+                    document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                    updateHighScore(elapsedTime);
+                }, 1000);
+            }
+        }
+
+        function resetCombinedTimer() {
+            clearInterval(combinedTimerInterval);
+            document.getElementById('slouchTimer').innerText = '0s';
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${remainingSeconds}s`;
+            }
+        }
+
+        function updateHighScore(elapsedTime) {
+            if (elapsedTime > highScore) {
+                highScore = elapsedTime;
+                document.getElementById('highScore').innerText = formatTime(highScore);
+            }
+        }
+
+        function notifyUser(message) {
+            const options = {
+                body: message,
+                icon: "icon.png"
+            };
+            const notification = new Notification("Hack Your Habits", options);
+            notification.onclick = () => {
+                if (message === "Stop Slouching") {
+                    stoppedSlouching = true;
+                } else if (message === "Stay Focused") {
+                    focused = true;
+                }
+            };
+        }
+
+        function toggleSlouch() {
+            if (runningSlouch) {
+                runningSlouch = false;
+                document.getElementById('startstop-slouch').innerText = "Start";
+            } else {
+                runningSlouch = true;
+                document.getElementById('startstop-slouch').innerText = "Stop";
+                initSlouch();
+            }
+
+            // Initialize distracted detection when slouch detection is started
+            if (!runningDistracted) {
+                runningDistracted = true;
+                initDistracted();
             }
         }
     </script>
