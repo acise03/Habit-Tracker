@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack Your Habits</title>
+    <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
+    <script src="tf.min.js"></script>
+    <script src="teachablemachine-pose.min.js"></script>
+</head>
+<body>
+    <div class="title">
+        <h1>Hack Your Habits</h1>
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+        <div>
+            <h2>Slouch Detection</h2>
+            <canvas id="canvas-slouch" style="border: 1px solid black;"></canvas>
+            <button type="button" onclick="toggleSlouch()" id="startstop-slouch">Start</button>
+            <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
+            <h2>High Score: <span id="highScore">0</span></h2>
+            <div id="label-container-slouch"></div>
+        </div>
+        <div>
+            <h2>Distracted Detection</h2>
+            <canvas id="canvas-distracted" style="border: 1px solid black;"></canvas>
+            <button type="button" onclick="initDistracted()">Start</button>
+            <div id="label-container-distracted"></div>
+        </div>
+    </div>
+
+    <script>
+        // Slouch Detection Script
+        const URL_SLOUCH = "./slouching_model/";
+        let modelSlouch, webcamSlouch, ctxSlouch, labelContainerSlouch, maxPredictionsSlouch;
+        let runningSlouch = false;
+        let stoppedSlouching = true;
+        let slouchTimerInterval;
+        let slouchStartTime;
+        let highScore = 0;
+
+        async function initSlouch() {
+            const modelURL = URL_SLOUCH + "model.json";
+            const metadataURL = URL_SLOUCH + "metadata.json";
+
+            modelSlouch = await tmPose.load(modelURL, metadataURL);
+            maxPredictionsSlouch = modelSlouch.getTotalClasses();
+
+            const size = 250;
+            const flip = true;
+            webcamSlouch = new tmPose.Webcam(size, size, flip);
+            await webcamSlouch.setup();
+            await webcamSlouch.play();
+            const canvas = document.getElementById("canvas-slouch");
+            canvas.width = size; canvas.height = size;
+            ctxSlouch = canvas.getContext("2d");
+            labelContainerSlouch = document.getElementById("label-container-slouch");
+            for (let i = 0; i < maxPredictionsSlouch; i++) {
+                labelContainerSlouch.appendChild(document.createElement("div"));
+            }
+            startSlouchTimer();
+        }
+
+        async function loopSlouch() {
+            if (runningSlouch) {
+                webcamSlouch.update();
+                await predictSlouch();
+                requestAnimationFrame(loopSlouch);
+            }
+        }
+
+        async function predictSlouch() {
+            const { pose, posenetOutput } = await modelSlouch.estimatePose(webcamSlouch.canvas);
+            const prediction = await modelSlouch.predict(posenetOutput);
+
+            for (let i = 0; i < maxPredictionsSlouch; i++) {
+                const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                labelContainerSlouch.childNodes[i].innerHTML = classPrediction;
+            }
+            checkSlouching(prediction);
+            drawPoseSlouch(pose);
+        }
+
+        function checkSlouching(pred) {
+            if (pred[0].probability > 0.6 && stoppedSlouching == false) {
+                stoppedSlouching = true;
+                startSlouchTimer();
+            }
+            if (pred[1].probability > 0.6 && stoppedSlouching) {
+                stoppedSlouching = false;
+                resetSlouchTimer();
+                const options = {
+                    body: "Stop Slouching",
+                    icon: "icon.png"
+                };
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+        }
+
+        function drawPoseSlouch(pose) {
+            if (webcamSlouch.canvas) {
+                ctxSlouch.drawImage(webcamSlouch.canvas, 0, 0);
+                if (pose) {
+                    const minPartConfidence = 0.5;
+                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctxSlouch);
+                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctxSlouch);
+                }
+            }
+        }
+
+        function startSlouchTimer() {
+            slouchStartTime = Date.now();
+            clearInterval(slouchTimerInterval);
+            slouchTimerInterval = setInterval(() => {
+                const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
+                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                updateHighScore(elapsedTime);
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        function updateHighScore(currentTime) {
+            if (currentTime > highScore) {
+                highScore = currentTime;
+                document.getElementById('highScore').innerText = formatTime(highScore);
+            }
+        }
+
+        function resetSlouchTimer() {
+            clearInterval(slouchTimerInterval);
+            document.getElementById('slouchTimer').innerText = '0s';
+        }
+
+        async function toggleSlouch() {
+            const button = document.getElementById("startstop-slouch");
+            if (runningSlouch) {
+                runningSlouch = false;
+                clearInterval(intervalId); // Stop the interval
+                button.textContent = "Start";
+                webcamSlouch.stop(); // Stop the webcam
+                labelContainerSlouch.innerHTML = ""; // Clear the labels
+            } else {
+                await initSlouch(); // Initialize the model and webcam
+                runningSlouch = true;
+                button.textContent = "Stop";
+                intervalId = requestAnimationFrame(loopSlouch); // Start the interval loop
+            }
+        }
+
+        // Distracted Detection Script
+        const URL_DISTRACTED = "./distracted_model/";
+        let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
+
+        async function initDistracted() {
+            const modelURL = URL_DISTRACTED + "model.json";
+            const metadataURL = URL_DISTRACTED + "metadata.json";
+
+            modelDistracted = await tmPose.load(modelURL, metadataURL);
+            maxPredictionsDistracted = modelDistracted.getTotalClasses();
+
+            const size = 250;
+            const flip = true;
+            webcamDistracted = new tmPose.Webcam(size, size, flip);
+            await webcamDistracted.setup();
+            await webcamDistracted.play();
+            const canvas = document.getElementById("canvas-distracted");
+            canvas.width = size; canvas.height = size;
+            ctxDistracted = canvas.getContext("2d");
+            labelContainerDistracted = document.getElementById("label-container-distracted");
+            for (let i = 0; i < maxPredictionsDistracted; i++) {
+                labelContainerDistracted.appendChild(document.createElement("div"));
+            }
+            window.requestAnimationFrame(loopDistracted);
+        }
+
+        async function loopDistracted() {
+            webcamDistracted.update();
+            await predictDistracted();
+            window.requestAnimationFrame(loopDistracted);
+        }
+
+        async function predictDistracted() {
+            const { pose, posenetOutput } = await modelDistracted.estimatePose(webcamDistracted.canvas);
+            const prediction = await modelDistracted.predict(posenetOutput);
+
+            for (let i = 0; i < maxPredictionsDistracted; i++) {
+                const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                labelContainerDistracted.childNodes[i].innerHTML = classPrediction;
+            }
+            drawPoseDistracted(pose);
+        }
+
+        function drawPoseDistracted(pose) {
+            if (webcamDistracted.canvas) {
+                ctxDistracted.drawImage(webcamDistracted.canvas, 0, 0);
+                if (pose) {
+                    const minPartConfidence = 0.5;
+                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctxDistracted);
+                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctxDistracted);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
