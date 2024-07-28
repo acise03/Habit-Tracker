@@ -36,8 +36,8 @@
         </div>
 
         <div class="score-box">
-            <h2>CURRENT SCORE: <span id="currentScore">0</span> seconds</h2>
-            <h2>HIGH SCORE: <span id="highScore">0</span> seconds</h2>
+            <h2>CURRENT SCORE: <span id="currentScore">0</span></h2>
+            <h2>HIGH SCORE: <span id="highScore">0</span></h2>
         </div>
 
         <div class="detection-box">
@@ -51,13 +51,13 @@
     <script>
         const URL_SLOUCH = "./slouching_model/";
         let modelSlouch, webcamSlouch, ctxSlouch, labelContainerSlouch, maxPredictionsSlouch;
-        let runningSlouch = false;
-        let stoppedSlouching = true;
+        let runningSlouch;
+        let stoppedSlouching;
 
         const URL_DISTRACTED = "./distracted_model/";
         let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
-        let runningDistracted = false;
-        let focused = true;
+        let runningDistracted;
+        let focused;
 
 
         let combinedTimerInterval;
@@ -217,9 +217,19 @@
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             if (minutes > 0) {
-                return `${minutes}m ${remainingSeconds}s`;
+                if (remainingSeconds == 1){
+                return `${minutes} minutes ${remainingSeconds} second`;
+                }
+                else{
+                    return `${minutes} minutes ${remainingSeconds} seconds`;
+                }
             } else {
-                return `${remainingSeconds}s`;
+                if (remainingSeconds == 1){
+                return `${remainingSeconds} second`;
+                }
+                else{
+                    return `${remainingSeconds} seconds`;
+                }
             }
         }
 
@@ -273,11 +283,7 @@
                 icon: "icon.png" // Path to an icon image
             };
 
-            const notification = new Notification("Notification Title", options);
-
-            notification.onclick = () => {
-                stoppedSlouching = true;
-            };
+            const notification = new Notification("Hack your Habits", options);
         }
 
     });

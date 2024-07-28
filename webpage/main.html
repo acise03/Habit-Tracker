@@ -7,6 +7,7 @@
     <title>Hack Your Habits</title>
     <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
     <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="script.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,8 +36,8 @@
         </div>
 
         <div class="score-box">
-            <h2>CURRENT SCORE: <span id="currentScore">0</span> seconds</h2>
-            <h2>HIGH SCORE: <span id="highScore">0</span> seconds</h2>
+            <h2>CURRENT SCORE: <span id="currentScore">0</span></h2>
+            <h2>HIGH SCORE: <span id="highScore">0</span></h2>
         </div>
 
         <div class="detection-box">
@@ -45,17 +46,18 @@
             <div id="label-container-distracted"></div>
             <button type="button" onclick="toggleDistracted()" id="startstop-distracted">Start</button>
         </div>
+        <button id="notifyButton">Enable Notifications</button>
     </div>
     <script>
         const URL_SLOUCH = "./slouching_model/";
         let modelSlouch, webcamSlouch, ctxSlouch, labelContainerSlouch, maxPredictionsSlouch;
-        let runningSlouch = false;
-        let stoppedSlouching = true;
+        let runningSlouch;
+        let stoppedSlouching;
 
         const URL_DISTRACTED = "./distracted_model/";
         let modelDistracted, webcamDistracted, ctxDistracted, labelContainerDistracted, maxPredictionsDistracted;
-        let runningDistracted = false;
-        let focused = true;
+        let runningDistracted;
+        let focused;
 
 
         let combinedTimerInterval;
@@ -215,9 +217,19 @@
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             if (minutes > 0) {
-                return `${minutes}m ${remainingSeconds}s`;
+                if (remainingSeconds == 1){
+                return `${minutes} minutes ${remainingSeconds} second`;
+                }
+                else{
+                    return `${minutes} minutes ${remainingSeconds} seconds`;
+                }
             } else {
-                return `${remainingSeconds}s`;
+                if (remainingSeconds == 1){
+                return `${remainingSeconds} second`;
+                }
+                else{
+                    return `${remainingSeconds} seconds`;
+                }
             }
         }
 
@@ -242,6 +254,39 @@
                 }
             };
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('notifyButton').addEventListener('click', () => {
+            // Check if the browser supports notifications
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            }
+            // Check if notification permissions have already been granted
+            else if (Notification.permission === "granted") {
+                // If it's okay, let's create a notification
+                showNotificationIntro();
+            }
+            // Otherwise, ask the user for permission
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    // If the user accepts, let's create a notification
+                    if (permission === "granted") {
+                        showNotificationIntro();
+                    }
+                });
+            }
+        });
+
+        function showNotificationIntro() {
+            const options = {
+                body: "We can send you notifications now!",
+                icon: "icon.png" // Path to an icon image
+            };
+
+            const notification = new Notification("Hack your Habits", options);
+        }
+
+    });
 
         function toggleSlouch() {
             if (runningSlouch) {
