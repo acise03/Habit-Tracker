@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack Your Habits</title>
+    <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/ef7a05f58b.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="title">
+            <h1>Hack Your Habits</h1>
+        </div>
+        <div>
+            <canvas id="canvas"></canvas>
+            <button type="button" onclick="toggle()" id="startstop">Start</button>
+        </div>
+        <h1>Notification Example</h1>
+        <button id="notifyButton">Show Notification</button>
+        <h2>Time without slouching: <span id="slouchTimer">0</span></h2>
+        <h2>High Score: <span id="highScore">0</span></h2>
+        <div id="label-container1"></div>
+        <div id="label-container2"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('notifyButton').addEventListener('click', () => {
+                if (!("Notification" in window)) {
+                    alert("This browser does not support desktop notification");
+                } else if (Notification.permission === "granted") {
+                    showNotificationIntro();
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            showNotificationIntro();
+                        }
+                    });
+                }
+            });
+
+            function showNotification() {
+                const options = {
+                    body: "Stop slouching",
+                    icon: "icon.png"
+                };
+
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+
+            function showNotificationIntro() {
+                const options = {
+                    body: "We can send you notifications now!",
+                    icon: "icon.png"
+                };
+
+                const notification = new Notification("Hack Your Habits", options);
+
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+    <script type="text/javascript">
+        const URL1 = "./my_model_slouch/";
+        const URL2 = "./my_model_distracted/";
+        let model1, model2, webcam, ctx, labelContainer1, labelContainer2, maxPredictions1, maxPredictions2;
+        let running = false;
+        let intervalId;
+        let stoppedSlouching = true;
+        let slouchTimerInterval;
+        let slouchStartTime;
+        let highScore = 0;
+
+        function startSlouchTimer() {
+            slouchStartTime = Date.now();
+            clearInterval(slouchTimerInterval);
+            slouchTimerInterval = setInterval(() => {
+                const elapsedTime = Math.floor((Date.now() - slouchStartTime) / 1000);
+                document.getElementById('slouchTimer').innerText = formatTime(elapsedTime);
+                updateHighScore(elapsedTime);
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        function updateHighScore(currentTime) {
+            if (currentTime > highScore) {
+                highScore = currentTime;
+                document.getElementById('highScore').innerText = formatTime(highScore);
+            }
+        }
+
+        function resetSlouchTimer() {
+            clearInterval(slouchTimerInterval);
+            document.getElementById('slouchTimer').innerText = '0s';
+        }
+
+        async function init() {
+            const modelURL1 = URL1 + "model.json";
+            const metadataURL1 = URL1 + "metadata.json";
+            const modelURL2 = URL2 + "model.json";
+            const metadataURL2 = URL2 + "metadata.json";
+
+            model1 = await tmPose.load(modelURL1, metadataURL1);
+            model2 = await tmPose.load(modelURL2, metadataURL2);
+            maxPredictions1 = model1.getTotalClasses();
+            maxPredictions2 = model2.getTotalClasses();
+
+            const size = 200;
+            const flip = true;
+            webcam = new tmPose.Webcam(size, size, flip);
+            await webcam.setup();
+            await webcam.play();
+
+            const canvas = document.getElementById("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            ctx = canvas.getContext("2d");
+
+            labelContainer1 = document.getElementById("label-container1");
+            for (let i = 0; i < maxPredictions1; i++) {
+                labelContainer1.appendChild(document.createElement("div"));
+            }
+
+            labelContainer2 = document.getElementById("label-container2");
+            for (let i = 0; i < maxPredictions2; i++) {
+                labelContainer2.appendChild(document.createElement("div"));
+            }
+
+            startSlouchTimer();
+        }
+
+        async function loop() {
+            if (running) {
+                webcam.update();
+                await predict();
+                requestAnimationFrame(loop);
+            }
+        }
+
+        async function predict() {
+            const { pose, posenetOutput } = await model1.estimatePose(webcam.canvas);
+            const prediction1 = await model1.predict(posenetOutput);
+            const prediction2 = await model2.predict(posenetOutput);
+
+            for (let i = 0; i < maxPredictions1; i++) {
+                const classPrediction1 = prediction1[i].className + ": " + prediction1[i].probability.toFixed(2);
+                labelContainer1.childNodes[i].innerHTML = classPrediction1;
+            }
+
+            for (let i = 0; i < maxPredictions2; i++) {
+                const classPrediction2 = prediction2[i].className + ": " + prediction2[i].probability.toFixed(2);
+                labelContainer2.childNodes[i].innerHTML = classPrediction2;
+            }
+
+            checkSlouching(prediction1, prediction2);
+            drawPose(pose);
+        }
+
+        function checkSlouching(pred1, pred2) {
+            if (pred1[0].probability > 0.6 && stoppedSlouching == false) {
+                stoppedSlouching = true;
+                startSlouchTimer();
+            }
+            if (pred1[1].probability > 0.6 && stoppedSlouching) {
+                stoppedSlouching = false;
+                resetSlouchTimer();
+                const options = {
+                    body: "Stop Slouching",
+                    icon: "icon.png"
+                };
+                const notification = new Notification("Hack Your Habits", options);
+                notification.onclick = () => {
+                    stoppedSlouching = true;
+                };
+            }
+
+            // You can add similar checks for predictions from the second model if needed
+        }
+
+        function drawPose(pose) {
+            if (webcam.canvas) {
+                ctx.drawImage(webcam.canvas, 0, 0);
+                if (pose) {
+                    const minPartConfidence = 0.5;
+                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+                }
+            }
+        }
+
+        async function toggle() {
+            const button = document.getElementById("startstop");
+            if (running) {
+                running = false;
+                clearInterval(intervalId);
+                button.textContent = "Start";
+                webcam.stop();
+                labelContainer1.innerHTML = "";
+                labelContainer2.innerHTML = "";
+            } else {
+                await init();
+                running = true;
+                button.textContent = "Stop";
+                intervalId = requestAnimationFrame(loop);
+            }
+        }
+    </script>
+</body>
+
+</html>
