@@ -8,14 +8,14 @@
     <link rel="icon" type="image/x-icon" href="images/FaviconA.png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@100;200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="tf.min.js"></script>
     <script src="teachablemachine-pose.min.js"></script>
 </head>
 
 <body>
     <div class="banner">
-        <h3>Note: Scores only count with slouch AND distracted detection on.</h3>
         <div class="title">
             <h1>Hack Your Habits</h1>
         </div>
@@ -28,12 +28,11 @@
             <div id="label-container-slouch"></div>
             <button type="button" onclick="toggleSlouch()" id="startstop-slouch">Start</button>
         </div>
-
         <div class="score-box">
+            <h3>Note: Scores only count with slouch<br>AND distracted detection on.</h3>
             <h2>CURRENT SCORE: <span id="currentScore">0</span></h2>
             <h2>HIGH SCORE: <span id="highScore">0</span></h2>
         </div>
-
         <div class="detection-box">
             <h2>Distracted Detection</h2>
             <canvas id="canvas-distracted"></canvas>
@@ -109,7 +108,7 @@
             if (pred[1].probability > 0.6 && stoppedSlouching) {
                 stoppedSlouching = false;
                 resetCombinedTimer();
-                notifyUser("Stop Slouching","icon2.png");
+                notifyUser("Stop Slouching", "icon2.png");
             }
         }
 
@@ -175,7 +174,7 @@
             if (pred[1].probability > 0.6 && focused) {
                 focused = false;
                 resetCombinedTimer();
-                notifyUser("Stay Focused","icon3.png");
+                notifyUser("Stay Focused", "icon3.png");
             }
         }
 
@@ -211,17 +210,17 @@
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             if (minutes > 0) {
-                if (remainingSeconds == 1){
-                return `${minutes} minutes ${remainingSeconds} second`;
+                if (remainingSeconds == 1) {
+                    return `${minutes} minutes ${remainingSeconds} second`;
                 }
-                else{
+                else {
                     return `${minutes} minutes ${remainingSeconds} seconds`;
                 }
             } else {
-                if (remainingSeconds == 1){
-                return `${remainingSeconds} second`;
+                if (remainingSeconds == 1) {
+                    return `${remainingSeconds} second`;
                 }
-                else{
+                else {
                     return `${remainingSeconds} seconds`;
                 }
             }
@@ -250,36 +249,36 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('notifyButton').addEventListener('click', () => {
-            // Check if the browser supports notifications
-            if (!("Notification" in window)) {
-                alert("This browser does not support desktop notification");
+            document.getElementById('notifyButton').addEventListener('click', () => {
+                // Check if the browser supports notifications
+                if (!("Notification" in window)) {
+                    alert("This browser does not support desktop notification");
+                }
+                // Check if notification permissions have already been granted
+                else if (Notification.permission === "granted") {
+                    // If it's okay, let's create a notification
+                    showNotificationIntro();
+                }
+                // Otherwise, ask the user for permission
+                else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        // If the user accepts, let's create a notification
+                        if (permission === "granted") {
+                            showNotificationIntro();
+                        }
+                    });
+                }
+            });
+
+            function showNotificationIntro() {
+                const options = {
+                    body: "We can send you notifications now!",
+                };
+
+                const notification = new Notification("Hack your Habits", options);
             }
-            // Check if notification permissions have already been granted
-            else if (Notification.permission === "granted") {
-                // If it's okay, let's create a notification
-                showNotificationIntro();
-            }
-            // Otherwise, ask the user for permission
-            else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    // If the user accepts, let's create a notification
-                    if (permission === "granted") {
-                        showNotificationIntro();
-                    }
-                });
-            }
+
         });
-
-        function showNotificationIntro() {
-            const options = {
-                body: "We can send you notifications now!",
-            };
-
-            const notification = new Notification("Hack your Habits", options);
-        }
-
-    });
 
         function toggleSlouch() {
             if (runningSlouch) {
